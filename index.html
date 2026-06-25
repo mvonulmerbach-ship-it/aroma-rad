@@ -17,16 +17,22 @@
     padding:7px 16px; border-radius:999px; font-size:14px; cursor:pointer; transition:.15s; }
   .controls button:hover { border-color:#999; }
   .controls button.active { background:var(--ink); color:#fff; border-color:var(--ink); }
-  .wrap { width:100%; max-width:900px; margin:0 auto; padding:6px 10px 24px; }
+  .crumb { min-height:24px; text-align:center; margin:6px 0 0; font-size:14px; font-weight:600; }
+  .crumb .sep { color:#bbb; font-weight:400; margin:0 5px; }
+  .crumb .clear { color:var(--muted); font-weight:400; font-size:12px; margin-left:10px;
+    cursor:pointer; text-decoration:underline; }
+  .wrap { width:100%; max-width:900px; margin:0 auto; padding:4px 10px 24px; }
   .stage { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden;
     border-radius:12px; touch-action:none; }
   svg { width:100%; height:100%; display:block; cursor:grab; }
   svg.grabbing { cursor:grabbing; }
-  .seg { stroke:#fff; stroke-width:1; transition:opacity .15s; }
-  .seg:hover { opacity:.78; }
+  .seg { stroke:#fff; stroke-width:1; cursor:pointer; transition:opacity .18s; }
+  .seg:hover { opacity:.82; }
+  .lbl,.lbl-cat,.lbl-sub { transition:opacity .18s; }
   .lbl { fill:#1f1f1f; pointer-events:none; }
   .lbl-cat { fill:#fff; font-weight:700; pointer-events:none; }
   .lbl-sub { fill:#2b2b2b; font-weight:600; pointer-events:none; }
+  .dim { opacity:.13 !important; }
   .zoom { position:absolute; right:10px; bottom:10px; display:flex; flex-direction:column; gap:6px; }
   .zoom button { width:38px; height:38px; border:1px solid #cfc9bd; background:rgba(255,255,255,.92);
     border-radius:10px; font-size:20px; line-height:1; color:var(--ink); cursor:pointer;
@@ -46,6 +52,7 @@
     <button data-f="wein">Nur Wein</button>
     <button data-f="kaffee">Nur Kaffee</button>
   </div>
+  <div class="crumb" id="crumb"></div>
 </header>
 <div class="wrap">
   <div class="stage" id="stage">
@@ -56,7 +63,7 @@
       <button id="zreset" title="Zurücksetzen" aria-label="Zurücksetzen" style="font-size:15px;">⟳</button>
     </div>
   </div>
-  <div class="hint">Mausrad oder Pinch zum Zoomen · ziehen zum Verschieben · Doppelklick zoomt rein</div>
+  <div class="hint">Klick auf ein Aroma zeigt den Pfad · Mausrad/Pinch zoomt · ziehen verschiebt</div>
   <div class="count" id="count"></div>
 </div>
 
@@ -452,6 +459,14 @@ function lighten(hex,t){
 }
 function fits(filter,tag){ return filter==='beide'?true:(tag==='beide'||tag===filter); }
 
+// attach identity (category/subcategory/leaf) so segments & labels can be highlighted together
+function setId(e,cat,sub,leaf,level,cn,sn){
+  e.setAttribute('data-cat',cat); e.setAttribute('data-level',level);
+  if(sub){ e.setAttribute('data-sub',sub); e.setAttribute('data-sn',sn); }
+  if(leaf) e.setAttribute('data-leaf',leaf);
+  e.setAttribute('data-cn',cn);
+}
+
 function curvedAt(rMid,a0,a1,txt,cls,weight,size){
   const mid=(a0+a1)/2, flip=(mid>0&&mid<Math.PI);
   const id='p'+(uid++);
@@ -495,7 +510,7 @@ function leafLabel(rIn,rOut,angle,txt){
 }
 
 function render(filter){
-  wheel.innerHTML=''; uid=0;
+  wheel.innerHTML=''; uid=0; sel=null; updateCrumb();
   defsLayer=mk('defs',{}); wheel.appendChild(defsLayer);
   const cats=[]; let total=0;
   for(const c of DATA.kategorien){
@@ -511,76 +526,119 @@ function render(filter){
   const per=(2*Math.PI - cats.length*GAP)/total;
   for(const c of cats){
     const span=c._n*per, ca0=a, ca1=a+span;
-    wheel.appendChild(mk('path',{class:'seg',d:arcPath(R0,R1,ca0,ca1),fill:c.farbe}));
+    const catSeg=mk('path',{class:'seg',d:arcPath(R0,R1,ca0,ca1),fill:c.farbe});
+    setId(catSeg,c.id,'','',1,c.name,''); wheel.appendChild(catSeg);
     let sa=ca0;
     for(const s of c.unterkategorien){
       const sspan=s.aromen.length*per, sa0=sa, sa1=sa+sspan;
-      wheel.appendChild(mk('path',{class:'seg',d:arcPath(R1,R2,sa0,sa1),fill:lighten(c.farbe,.42)}));
+      const subSeg=mk('path',{class:'seg',d:arcPath(R1,R2,sa0,sa1),fill:lighten(c.farbe,.42)});
+      setId(subSeg,c.id,s.id,'',2,c.name,s.name); wheel.appendChild(subSeg);
       let la=sa0;
       for(const leaf of s.aromen){
         const la0=la,la1=la+per;
-        wheel.appendChild(mk('path',{class:'seg',d:arcPath(R2,R3,la0,la1),fill:lighten(c.farbe,.74)}));
-        wheel.appendChild(leafLabel(R2,R3,(la0+la1)/2,leaf.name));
+        const leafSeg=mk('path',{class:'seg',d:arcPath(R2,R3,la0,la1),fill:lighten(c.farbe,.74)});
+        setId(leafSeg,c.id,s.id,leaf.name,3,c.name,s.name); wheel.appendChild(leafSeg);
+        const ll=leafLabel(R2,R3,(la0+la1)/2,leaf.name);
+        setId(ll,c.id,s.id,leaf.name,3,c.name,s.name); wheel.appendChild(ll);
         la=la1;
       }
-      wheel.appendChild(bandLabel(R1,R2,sa0,sa1,s.name,'lbl-sub','600',SUB_SIZE));
+      const sl=bandLabel(R1,R2,sa0,sa1,s.name,'lbl-sub','600',SUB_SIZE);
+      setId(sl,c.id,s.id,'',2,c.name,s.name); wheel.appendChild(sl);
       sa=sa1;
     }
-    wheel.appendChild(bandLabel(R0,R1,ca0,ca1,c.name.toUpperCase(),'lbl-cat','700',CAT_SIZE));
+    const cl=bandLabel(R0,R1,ca0,ca1,c.name.toUpperCase(),'lbl-cat','700',CAT_SIZE);
+    setId(cl,c.id,'','',1,c.name,''); wheel.appendChild(cl);
     a=ca1+GAP;
   }
-  wheel.appendChild(mk('circle',{cx:CX,cy:CY,r:R0-6,fill:'#fff',stroke:'#e6e1d6','stroke-width':2}));
-  wheel.appendChild(mk('text',{x:CX,y:CY-7,'text-anchor':'middle','font-size':20,'font-weight':700,fill:'#3a3a3a'},'AROMA'));
-  wheel.appendChild(mk('text',{x:CX,y:CY+16,'text-anchor':'middle','font-size':13,fill:'#8a8a8a'},
+  wheel.appendChild(mk('circle',{id:'hub',cx:CX,cy:CY,r:R0-6,fill:'#fff',stroke:'#e6e1d6','stroke-width':2}));
+  wheel.appendChild(mk('text',{x:CX,y:CY-7,'text-anchor':'middle','font-size':20,'font-weight':700,fill:'#3a3a3a','pointer-events':'none'},'AROMA'));
+  wheel.appendChild(mk('text',{x:CX,y:CY+16,'text-anchor':'middle','font-size':13,fill:'#8a8a8a','pointer-events':'none'},
     filter==='wein'?'Wein':filter==='kaffee'?'Kaffee':'Wein & Kaffee'));
   el('count').textContent=`${cats.length} Kategorien · ${total} Aromen angezeigt`;
 }
 
+/* ---------- Pfad-Hervorhebung ---------- */
+let sel=null; // {cat,sub,leaf,level,cn,sn}
+function applyHighlight(){
+  const all=wheel.querySelectorAll('[data-cat]');
+  all.forEach(e=>{
+    if(!sel){ e.classList.remove('dim'); return; }
+    const cat=e.getAttribute('data-cat');
+    const sub=e.getAttribute('data-sub')||'';
+    const leaf=e.getAttribute('data-leaf')||'';
+    const lvl=+e.getAttribute('data-level');
+    let on=false;
+    if(cat===sel.cat){
+      if(sel.level===1) on=true;
+      else if(sel.level===2) on=(lvl===1)||(sub===sel.sub);
+      else { if(lvl===1) on=true; else if(sub===sel.sub) on=(lvl===2)||(leaf===sel.leaf); }
+    }
+    e.classList.toggle('dim',!on);
+  });
+}
+function updateCrumb(){
+  const c=el('crumb');
+  if(!sel){ c.textContent=''; return; }
+  let parts=[sel.cn];
+  if(sel.level>=2) parts.push(sel.sn);
+  if(sel.level>=3) parts.push(sel.leaf);
+  c.innerHTML = parts.map(p=>`<span>${p}</span>`).join('<span class="sep">›</span>')
+    + '<span class="clear" id="clr">× zurücksetzen</span>';
+  el('clr').addEventListener('click',clearSel);
+}
+function clearSel(){ sel=null; applyHighlight(); updateCrumb(); }
+function selectFromEl(e){
+  const cat=e.getAttribute('data-cat'); if(!cat) return;
+  const sub=e.getAttribute('data-sub')||''; const leaf=e.getAttribute('data-leaf')||'';
+  const lvl=+e.getAttribute('data-level');
+  const cn=e.getAttribute('data-cn')||''; const sn=e.getAttribute('data-sn')||'';
+  if(sel && sel.cat===cat && (sel.sub||'')===sub && (sel.leaf||'')===leaf && sel.level===lvl){ clearSel(); return; }
+  sel={cat,sub:sub||null,leaf:leaf||null,level:lvl,cn,sn};
+  applyHighlight(); updateCrumb();
+}
+function handleTap(cx,cy){
+  const t=document.elementFromPoint(cx,cy);
+  if(t && t.tagName==='path' && t.classList.contains('seg')) selectFromEl(t);
+  else clearSel();
+}
+
 /* ---------- Zoom & Pan via viewBox ---------- */
 const VB={x:0,y:0,w:1000,h:1000};
-const MIN_W=160, MAX_W=1000;          // max zoom-in / zoom-out (full wheel)
+const MIN_W=160, MAX_W=1000;
 function applyVB(){ wheel.setAttribute('viewBox',`${VB.x} ${VB.y} ${VB.w} ${VB.h}`); }
 function clientToSvg(cx,cy){
   const r=wheel.getBoundingClientRect();
   return { x:VB.x+(cx-r.left)/r.width*VB.w, y:VB.y+(cy-r.top)/r.height*VB.h };
 }
 function zoomAt(cx,cy,factor){
-  let nw=VB.w*factor;
-  nw=Math.max(MIN_W,Math.min(MAX_W,nw));
-  const scale=nw/VB.w;
-  if(scale===1) return;
+  let nw=VB.w*factor; nw=Math.max(MIN_W,Math.min(MAX_W,nw));
+  const scale=nw/VB.w; if(scale===1) return;
   const p=clientToSvg(cx,cy);
-  VB.x=p.x-(p.x-VB.x)*scale;
-  VB.y=p.y-(p.y-VB.y)*scale;
-  VB.w*=scale; VB.h*=scale;
-  clampPan(); applyVB();
+  VB.x=p.x-(p.x-VB.x)*scale; VB.y=p.y-(p.y-VB.y)*scale;
+  VB.w*=scale; VB.h*=scale; clampPan(); applyVB();
 }
 function clampPan(){
-  // keep the wheel from drifting too far out of view
-  const m=VB.w; // allow up to one viewport of margin
+  const m=VB.w;
   VB.x=Math.max(-m,Math.min(1000+m-VB.w,VB.x));
   VB.y=Math.max(-m,Math.min(1000+m-VB.h,VB.y));
 }
 function resetVB(){ VB.x=0;VB.y=0;VB.w=1000;VB.h=1000; applyVB(); }
 
-// wheel zoom
-stage.addEventListener('wheel',e=>{
-  e.preventDefault();
-  zoomAt(e.clientX,e.clientY, e.deltaY>0?1.12:0.89);
-},{passive:false});
+stage.addEventListener('wheel',e=>{ e.preventDefault(); zoomAt(e.clientX,e.clientY,e.deltaY>0?1.12:0.89); },{passive:false});
 
-// pointer drag + pinch
-const pts=new Map(); let pinchPrev=0;
+const pts=new Map(); let pinchPrev=0, dragMoved=false, downX=0, downY=0;
 stage.addEventListener('pointerdown',e=>{
   stage.setPointerCapture(e.pointerId);
   pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(pts.size===1) wheel.classList.add('grabbing');
+  if(pts.size===1){ dragMoved=false; downX=e.clientX; downY=e.clientY; wheel.classList.add('grabbing'); }
+  else dragMoved=true;
 });
 stage.addEventListener('pointermove',e=>{
   if(!pts.has(e.pointerId)) return;
   const prev=pts.get(e.pointerId);
   pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(pts.size===1){
+    if(Math.hypot(e.clientX-downX,e.clientY-downY)>6) dragMoved=true;
     const r=wheel.getBoundingClientRect();
     VB.x-=(e.clientX-prev.x)/r.width*VB.w;
     VB.y-=(e.clientY-prev.y)/r.height*VB.h;
@@ -589,14 +647,17 @@ stage.addEventListener('pointermove',e=>{
     const a=[...pts.values()];
     const dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
     const mx=(a[0].x+a[1].x)/2, my=(a[0].y+a[1].y)/2;
-    if(pinchPrev) zoomAt(mx,my, pinchPrev/dist);
+    if(pinchPrev) zoomAt(mx,my,pinchPrev/dist);
     pinchPrev=dist;
   }
 });
 function endPtr(e){
+  const wasTap = pts.size===1 && !dragMoved;
+  const cx=e.clientX, cy=e.clientY;
   pts.delete(e.pointerId);
   if(pts.size<2) pinchPrev=0;
   if(pts.size===0) wheel.classList.remove('grabbing');
+  if(wasTap) handleTap(cx,cy);
 }
 stage.addEventListener('pointerup',endPtr);
 stage.addEventListener('pointercancel',endPtr);
