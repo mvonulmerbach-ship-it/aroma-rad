@@ -9,22 +9,32 @@
   * { box-sizing:border-box; }
   html,body { margin:0; padding:0; background:var(--bg); color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
-  header { text-align:center; padding:18px 16px 6px; }
+  header { text-align:center; padding:16px 16px 4px; }
   h1 { margin:0; font-size:clamp(18px,2.4vw,26px); letter-spacing:.3px; }
   .sub { color:var(--muted); font-size:13px; margin-top:4px; }
-  .controls { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:14px 0 4px; }
+  .controls { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:12px 0 4px; }
   .controls button { border:1px solid #cfc9bd; background:#fff; color:var(--ink);
     padding:7px 16px; border-radius:999px; font-size:14px; cursor:pointer; transition:.15s; }
   .controls button:hover { border-color:#999; }
   .controls button.active { background:var(--ink); color:#fff; border-color:var(--ink); }
-  .wrap { width:100%; max-width:900px; margin:0 auto; padding:8px 10px 28px; }
-  svg { width:100%; height:auto; display:block; }
+  .wrap { width:100%; max-width:900px; margin:0 auto; padding:6px 10px 24px; }
+  .stage { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden;
+    border-radius:12px; touch-action:none; }
+  svg { width:100%; height:100%; display:block; cursor:grab; }
+  svg.grabbing { cursor:grabbing; }
   .seg { stroke:#fff; stroke-width:1; transition:opacity .15s; }
   .seg:hover { opacity:.78; }
   .lbl { fill:#1f1f1f; pointer-events:none; }
   .lbl-cat { fill:#fff; font-weight:700; pointer-events:none; }
   .lbl-sub { fill:#2b2b2b; font-weight:600; pointer-events:none; }
-  .count { color:var(--muted); font-size:12px; text-align:center; margin-top:6px; }
+  .zoom { position:absolute; right:10px; bottom:10px; display:flex; flex-direction:column; gap:6px; }
+  .zoom button { width:38px; height:38px; border:1px solid #cfc9bd; background:rgba(255,255,255,.92);
+    border-radius:10px; font-size:20px; line-height:1; color:var(--ink); cursor:pointer;
+    box-shadow:0 1px 3px rgba(0,0,0,.12); display:flex; align-items:center; justify-content:center; }
+  .zoom button:hover { background:#fff; border-color:#999; }
+  .zoom button:active { transform:translateY(1px); }
+  .hint { color:var(--muted); font-size:11px; text-align:center; margin-top:8px; }
+  .count { color:var(--muted); font-size:12px; text-align:center; margin-top:2px; }
 </style>
 </head>
 <body>
@@ -38,7 +48,15 @@
   </div>
 </header>
 <div class="wrap">
-  <svg id="wheel" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" aria-label="Aroma-Rad"></svg>
+  <div class="stage" id="stage">
+    <svg id="wheel" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" aria-label="Aroma-Rad"></svg>
+    <div class="zoom">
+      <button id="zin" title="Vergrößern" aria-label="Vergrößern">+</button>
+      <button id="zout" title="Verkleinern" aria-label="Verkleinern">−</button>
+      <button id="zreset" title="Zurücksetzen" aria-label="Zurücksetzen" style="font-size:15px;">⟳</button>
+    </div>
+  </div>
+  <div class="hint">Mausrad oder Pinch zum Zoomen · ziehen zum Verschieben · Doppelklick zoomt rein</div>
   <div class="count" id="count"></div>
 </div>
 
@@ -401,23 +419,16 @@ const DATA = {
 const SVG_NS="http://www.w3.org/2000/svg";
 const FONTFAM='-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
 const CX=500, CY=500;
-const R0=105;   // inner hole
-const R1=235;   // end of category ring
-const R2=345;   // end of subcategory ring
-const R3=495;   // end of aroma ring
+const R0=105, R1=235, R2=345, R3=495;
 const GAP=0.005;
-// target (preferred) sizes per ring – only reduced if neither orientation fits
-const CAT_SIZE=15, SUB_SIZE=13, LEAF_SIZE=12;
-const MIN_SIZE=6;
+const CAT_SIZE=15, SUB_SIZE=13, LEAF_SIZE=12, MIN_SIZE=6;
 
 const el=id=>document.getElementById(id);
-const wheel=el('wheel');
+const wheel=el('wheel'), stage=el('stage');
 let defsLayer, uid=0;
 
-// ---- text measurement so labels always fit ----
 const _c=document.createElement('canvas').getContext('2d');
 function measure(txt,size,weight){ _c.font=(weight||'400')+' '+size+'px '+FONTFAM; return _c.measureText(txt).width||1; }
-// size whose width == budget (unclamped)
 function sizeFor(txt,budget,weight){ return budget*10/measure(txt,10,weight); }
 
 function polar(r,a){ return [CX+r*Math.cos(a), CY+r*Math.sin(a)]; }
@@ -441,7 +452,6 @@ function lighten(hex,t){
 }
 function fits(filter,tag){ return filter==='beide'?true:(tag==='beide'||tag===filter); }
 
-// tangential (curved along arc) text at a fixed size
 function curvedAt(rMid,a0,a1,txt,cls,weight,size){
   const mid=(a0+a1)/2, flip=(mid>0&&mid<Math.PI);
   const id='p'+(uid++);
@@ -453,7 +463,6 @@ function curvedAt(rMid,a0,a1,txt,cls,weight,size){
   t.appendChild(mk('textPath',{href:'#'+id,startOffset:'50%'},txt));
   return t;
 }
-// radial (from centre outward) text at a fixed size, centred in its band
 function radialAt(rMid,angle,txt,cls,weight,size){
   let deg=angle*180/Math.PI;
   if(deg>90&&deg<270) deg+=180;
@@ -461,25 +470,18 @@ function radialAt(rMid,angle,txt,cls,weight,size){
   return mk('text',{x:x,y:y,class:cls,'font-size':size.toFixed(2),'font-weight':weight,
     'text-anchor':'middle','dominant-baseline':'middle',transform:`rotate(${deg} ${x} ${y})`},txt);
 }
-
-// Decide orientation: keep target size, switch tangential -> radial before shrinking.
 function bandLabel(rIn,rOut,a0,a1,txt,cls,weight,target){
   const rMid=(rIn+rOut)/2, band=rOut-rIn, mid=(a0+a1)/2;
-  const arc=(a1-a0)*rMid;            // tangential length available
-  // 1) tangential at full target size?
+  const arc=(a1-a0)*rMid;
   if(measure(txt,target,weight)<=arc*0.90 && target<=band*0.82)
     return curvedAt(rMid,a0,a1,txt,cls,weight,target);
-  // 2) radial at full target size? (length budget = band depth, height = angular room)
   if(measure(txt,target,weight)<=band*0.90 && target<=arc*0.92)
     return radialAt(rMid,mid,txt,cls,weight,target);
-  // 3) neither orientation fits at target -> shrink, choosing the roomier orientation
   const sT=Math.min(sizeFor(txt,arc*0.90,weight), band*0.82);
   const sR=Math.min(sizeFor(txt,band*0.90,weight), arc*0.92);
   if(sR>=sT) return radialAt(rMid,mid,txt,cls,weight,Math.max(MIN_SIZE,sR));
   return curvedAt(rMid,a0,a1,txt,cls,weight,Math.max(MIN_SIZE,sT));
 }
-
-// outer-ring leaf label: always radial; shrink only if needed
 function leafLabel(rIn,rOut,angle,txt){
   const budget=(rOut-rIn)-6;
   let size=Math.min(LEAF_SIZE, sizeFor(txt,budget,'400'));
@@ -495,7 +497,6 @@ function leafLabel(rIn,rOut,angle,txt){
 function render(filter){
   wheel.innerHTML=''; uid=0;
   defsLayer=mk('defs',{}); wheel.appendChild(defsLayer);
-
   const cats=[]; let total=0;
   for(const c of DATA.kategorien){
     const subs=[];
@@ -506,10 +507,8 @@ function render(filter){
     const n=subs.reduce((m,s)=>m+s.aromen.length,0);
     if(n){ cats.push({...c,unterkategorien:subs,_n:n}); total+=n; }
   }
-
   let a=-Math.PI/2;
   const per=(2*Math.PI - cats.length*GAP)/total;
-
   for(const c of cats){
     const span=c._n*per, ca0=a, ca1=a+span;
     wheel.appendChild(mk('path',{class:'seg',d:arcPath(R0,R1,ca0,ca1),fill:c.farbe}));
@@ -530,13 +529,82 @@ function render(filter){
     wheel.appendChild(bandLabel(R0,R1,ca0,ca1,c.name.toUpperCase(),'lbl-cat','700',CAT_SIZE));
     a=ca1+GAP;
   }
-
   wheel.appendChild(mk('circle',{cx:CX,cy:CY,r:R0-6,fill:'#fff',stroke:'#e6e1d6','stroke-width':2}));
   wheel.appendChild(mk('text',{x:CX,y:CY-7,'text-anchor':'middle','font-size':20,'font-weight':700,fill:'#3a3a3a'},'AROMA'));
   wheel.appendChild(mk('text',{x:CX,y:CY+16,'text-anchor':'middle','font-size':13,fill:'#8a8a8a'},
     filter==='wein'?'Wein':filter==='kaffee'?'Kaffee':'Wein & Kaffee'));
   el('count').textContent=`${cats.length} Kategorien · ${total} Aromen angezeigt`;
 }
+
+/* ---------- Zoom & Pan via viewBox ---------- */
+const VB={x:0,y:0,w:1000,h:1000};
+const MIN_W=160, MAX_W=1000;          // max zoom-in / zoom-out (full wheel)
+function applyVB(){ wheel.setAttribute('viewBox',`${VB.x} ${VB.y} ${VB.w} ${VB.h}`); }
+function clientToSvg(cx,cy){
+  const r=wheel.getBoundingClientRect();
+  return { x:VB.x+(cx-r.left)/r.width*VB.w, y:VB.y+(cy-r.top)/r.height*VB.h };
+}
+function zoomAt(cx,cy,factor){
+  let nw=VB.w*factor;
+  nw=Math.max(MIN_W,Math.min(MAX_W,nw));
+  const scale=nw/VB.w;
+  if(scale===1) return;
+  const p=clientToSvg(cx,cy);
+  VB.x=p.x-(p.x-VB.x)*scale;
+  VB.y=p.y-(p.y-VB.y)*scale;
+  VB.w*=scale; VB.h*=scale;
+  clampPan(); applyVB();
+}
+function clampPan(){
+  // keep the wheel from drifting too far out of view
+  const m=VB.w; // allow up to one viewport of margin
+  VB.x=Math.max(-m,Math.min(1000+m-VB.w,VB.x));
+  VB.y=Math.max(-m,Math.min(1000+m-VB.h,VB.y));
+}
+function resetVB(){ VB.x=0;VB.y=0;VB.w=1000;VB.h=1000; applyVB(); }
+
+// wheel zoom
+stage.addEventListener('wheel',e=>{
+  e.preventDefault();
+  zoomAt(e.clientX,e.clientY, e.deltaY>0?1.12:0.89);
+},{passive:false});
+
+// pointer drag + pinch
+const pts=new Map(); let pinchPrev=0;
+stage.addEventListener('pointerdown',e=>{
+  stage.setPointerCapture(e.pointerId);
+  pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pts.size===1) wheel.classList.add('grabbing');
+});
+stage.addEventListener('pointermove',e=>{
+  if(!pts.has(e.pointerId)) return;
+  const prev=pts.get(e.pointerId);
+  pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pts.size===1){
+    const r=wheel.getBoundingClientRect();
+    VB.x-=(e.clientX-prev.x)/r.width*VB.w;
+    VB.y-=(e.clientY-prev.y)/r.height*VB.h;
+    clampPan(); applyVB();
+  } else if(pts.size===2){
+    const a=[...pts.values()];
+    const dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+    const mx=(a[0].x+a[1].x)/2, my=(a[0].y+a[1].y)/2;
+    if(pinchPrev) zoomAt(mx,my, pinchPrev/dist);
+    pinchPrev=dist;
+  }
+});
+function endPtr(e){
+  pts.delete(e.pointerId);
+  if(pts.size<2) pinchPrev=0;
+  if(pts.size===0) wheel.classList.remove('grabbing');
+}
+stage.addEventListener('pointerup',endPtr);
+stage.addEventListener('pointercancel',endPtr);
+stage.addEventListener('dblclick',e=>{ e.preventDefault(); zoomAt(e.clientX,e.clientY,0.6); });
+
+el('zin').addEventListener('click',()=>{ const r=wheel.getBoundingClientRect(); zoomAt(r.left+r.width/2,r.top+r.height/2,0.8); });
+el('zout').addEventListener('click',()=>{ const r=wheel.getBoundingClientRect(); zoomAt(r.left+r.width/2,r.top+r.height/2,1.25); });
+el('zreset').addEventListener('click',resetVB);
 
 document.querySelectorAll('.controls button').forEach(b=>{
   b.addEventListener('click',()=>{
@@ -546,7 +614,7 @@ document.querySelectorAll('.controls button').forEach(b=>{
   });
 });
 
-render('beide');
+render('beide'); applyVB();
 if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(()=>{
   render(document.querySelector('.controls button.active').dataset.f);
 }); }
