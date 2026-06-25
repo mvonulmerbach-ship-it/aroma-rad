@@ -1,0 +1,353 @@
+{
+  "meta": {
+    "titel": "Aroma-Rad Wein & Kaffee",
+    "beschreibung": "Kombiniertes 3-Ebenen-Aromarad für Wein und Kaffee. Ebene 1 = Hauptkategorie, Ebene 2 = Unterkategorie, Ebene 3 = konkrete Aromen. Jedes Aroma ist mit 'gilt_fuer' getaggt (wein | kaffee | beide), sodass aus denselben Daten ein Wein-, ein Kaffee- oder ein kombiniertes Rad gerendert werden kann.",
+    "version": "1.1",
+    "sprache": "de",
+    "stand": "2026-06-25",
+    "tag_werte": ["wein", "kaffee", "beide"],
+    "hinweis_skalierung": "Struktur ist bewusst rekursiv: kategorien[] -> unterkategorien[] -> aromen[]. Jede Ebene hat eine stabile 'id'. Farben sind pro Hauptkategorie definiert; Unterkategorien/Aromen können Helligkeitsabstufungen davon ableiten. Daraus lässt sich ein skalierbares SVG/interaktives Rad generieren."
+  },
+  "kategorien": [
+    {
+      "id": "fruchtig",
+      "name": "Fruchtig",
+      "farbe": "#E84C5A",
+      "unterkategorien": [
+        {
+          "id": "zitrusfrucht",
+          "name": "Zitrusfrucht",
+          "aromen": [
+            { "name": "Zitrone", "gilt_fuer": "beide" },
+            { "name": "Limette", "gilt_fuer": "beide" },
+            { "name": "Grapefruit", "gilt_fuer": "beide" },
+            { "name": "Orange", "gilt_fuer": "beide" },
+            { "name": "Mandarine", "gilt_fuer": "beide" },
+            { "name": "Orangenschale", "gilt_fuer": "beide" }
+          ]
+        },
+        {
+          "id": "gruene_frucht",
+          "name": "Grüne Frucht",
+          "aromen": [
+            { "name": "Grüner Apfel", "gilt_fuer": "wein" },
+            { "name": "Reifer Apfel", "gilt_fuer": "wein" },
+            { "name": "Birne", "gilt_fuer": "wein" },
+            { "name": "Stachelbeere", "gilt_fuer": "wein" },
+            { "name": "Quitte", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "steinobst",
+          "name": "Steinobst",
+          "aromen": [
+            { "name": "Pfirsich", "gilt_fuer": "wein" },
+            { "name": "Aprikose", "gilt_fuer": "beide" },
+            { "name": "Nektarine", "gilt_fuer": "wein" },
+            { "name": "Pflaume", "gilt_fuer": "beide" },
+            { "name": "Kirsche", "gilt_fuer": "beide" }
+          ]
+        },
+        {
+          "id": "rote_beeren",
+          "name": "Rote Beeren",
+          "aromen": [
+            { "name": "Erdbeere", "gilt_fuer": "beide" },
+            { "name": "Himbeere", "gilt_fuer": "beide" },
+            { "name": "Rote Johannisbeere", "gilt_fuer": "beide" },
+            { "name": "Preiselbeere", "gilt_fuer": "wein" },
+            { "name": "Sauerkirsche", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "dunkle_beeren",
+          "name": "Dunkle Beeren",
+          "aromen": [
+            { "name": "Brombeere", "gilt_fuer": "beide" },
+            { "name": "Cassis", "gilt_fuer": "beide" },
+            { "name": "Heidelbeere", "gilt_fuer": "beide" },
+            { "name": "Holunder", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "tropische_frucht",
+          "name": "Tropische Frucht",
+          "aromen": [
+            { "name": "Banane", "gilt_fuer": "beide" },
+            { "name": "Ananas", "gilt_fuer": "beide" },
+            { "name": "Mango", "gilt_fuer": "beide" },
+            { "name": "Litschi", "gilt_fuer": "wein" },
+            { "name": "Maracuja", "gilt_fuer": "beide" },
+            { "name": "Honigmelone", "gilt_fuer": "wein" },
+            { "name": "Guave", "gilt_fuer": "kaffee" }
+          ]
+        },
+        {
+          "id": "getrocknete_frucht",
+          "name": "Trockenfrucht",
+          "aromen": [
+            { "name": "Rosine", "gilt_fuer": "beide" },
+            { "name": "Getr. Aprikose", "gilt_fuer": "beide" },
+            { "name": "Dörrpflaume", "gilt_fuer": "beide" },
+            { "name": "Feige", "gilt_fuer": "beide" },
+            { "name": "Dattel", "gilt_fuer": "kaffee" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blumig",
+      "name": "Blumig",
+      "farbe": "#E89AC0",
+      "unterkategorien": [
+        {
+          "id": "weisse_blueten",
+          "name": "Weiße Blüten",
+          "aromen": [
+            { "name": "Akazie", "gilt_fuer": "wein" },
+            { "name": "Holunderblüte", "gilt_fuer": "wein" },
+            { "name": "Jasmin", "gilt_fuer": "beide" },
+            { "name": "Orangenblüte", "gilt_fuer": "beide" }
+          ]
+        },
+        {
+          "id": "duftblueten",
+          "name": "Duftblüten",
+          "aromen": [
+            { "name": "Rose", "gilt_fuer": "beide" },
+            { "name": "Veilchen", "gilt_fuer": "wein" },
+            { "name": "Flieder", "gilt_fuer": "wein" },
+            { "name": "Lavendel", "gilt_fuer": "wein" },
+            { "name": "Geranie", "gilt_fuer": "wein" },
+            { "name": "Kamille", "gilt_fuer": "beide" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pflanzlich",
+      "name": "Pflanzlich",
+      "farbe": "#7DA34D",
+      "unterkategorien": [
+        {
+          "id": "frisch_gruen",
+          "name": "Frisch-Grün",
+          "aromen": [
+            { "name": "Grünes Gras", "gilt_fuer": "beide" },
+            { "name": "Grüne Paprika", "gilt_fuer": "wein" },
+            { "name": "Tomatenblatt", "gilt_fuer": "wein" },
+            { "name": "Brennnessel", "gilt_fuer": "wein" },
+            { "name": "Erbsenschote", "gilt_fuer": "kaffee" }
+          ]
+        },
+        {
+          "id": "kraeuter",
+          "name": "Kräuter",
+          "aromen": [
+            { "name": "Minze", "gilt_fuer": "beide" },
+            { "name": "Eukalyptus", "gilt_fuer": "wein" },
+            { "name": "Thymian", "gilt_fuer": "wein" },
+            { "name": "Fenchel", "gilt_fuer": "wein" },
+            { "name": "Dill", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "gemuese_gekocht",
+          "name": "Gemüse",
+          "aromen": [
+            { "name": "Grüne Bohne", "gilt_fuer": "beide" },
+            { "name": "Spargel", "gilt_fuer": "wein" },
+            { "name": "Artischocke", "gilt_fuer": "wein" },
+            { "name": "Rote Bete", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "getrocknet_pflanzlich",
+          "name": "Getrocknet",
+          "aromen": [
+            { "name": "Heu", "gilt_fuer": "wein" },
+            { "name": "Tabak", "gilt_fuer": "beide" },
+            { "name": "Schwarzer Tee", "gilt_fuer": "beide" },
+            { "name": "Walnussschale", "gilt_fuer": "wein" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wuerzig",
+      "name": "Würzig",
+      "farbe": "#C8642A",
+      "unterkategorien": [
+        {
+          "id": "suesse_gewuerze",
+          "name": "Süße Gewürze",
+          "aromen": [
+            { "name": "Vanille", "gilt_fuer": "beide" },
+            { "name": "Zimt", "gilt_fuer": "beide" },
+            { "name": "Muskatnuss", "gilt_fuer": "beide" },
+            { "name": "Nelke", "gilt_fuer": "beide" },
+            { "name": "Anis", "gilt_fuer": "beide" }
+          ]
+        },
+        {
+          "id": "pikante_gewuerze",
+          "name": "Pikante Gewürze",
+          "aromen": [
+            { "name": "Schwarzer Pfeffer", "gilt_fuer": "beide" },
+            { "name": "Lakritz", "gilt_fuer": "beide" },
+            { "name": "Ingwer", "gilt_fuer": "wein" },
+            { "name": "Wacholder", "gilt_fuer": "wein" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suess_karamell",
+      "name": "Süß / Karamell",
+      "farbe": "#B5742E",
+      "unterkategorien": [
+        {
+          "id": "zucker_karamell",
+          "name": "Zucker",
+          "aromen": [
+            { "name": "Karamell", "gilt_fuer": "beide" },
+            { "name": "Toffee", "gilt_fuer": "kaffee" },
+            { "name": "Brauner Zucker", "gilt_fuer": "kaffee" },
+            { "name": "Ahornsirup", "gilt_fuer": "kaffee" },
+            { "name": "Melasse", "gilt_fuer": "kaffee" },
+            { "name": "Honig", "gilt_fuer": "beide" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "geroestet_nussig",
+      "name": "Geröstet / Nussig",
+      "farbe": "#6E4226",
+      "unterkategorien": [
+        {
+          "id": "nuesse",
+          "name": "Nüsse",
+          "aromen": [
+            { "name": "Mandel", "gilt_fuer": "beide" },
+            { "name": "Haselnuss", "gilt_fuer": "beide" },
+            { "name": "Walnuss", "gilt_fuer": "beide" },
+            { "name": "Erdnuss", "gilt_fuer": "kaffee" },
+            { "name": "Kokosnuss", "gilt_fuer": "beide" }
+          ]
+        },
+        {
+          "id": "kakao_schokolade",
+          "name": "Kakao",
+          "aromen": [
+            { "name": "Dunkle Schokolade", "gilt_fuer": "beide" },
+            { "name": "Kakao", "gilt_fuer": "beide" },
+            { "name": "Milchschokolade", "gilt_fuer": "beide" }
+          ]
+        },
+        {
+          "id": "roestaromen",
+          "name": "Röstaromen",
+          "aromen": [
+            { "name": "Röstkaffee", "gilt_fuer": "beide" },
+            { "name": "Toast", "gilt_fuer": "beide" },
+            { "name": "Frisches Brot", "gilt_fuer": "beide" },
+            { "name": "Malz", "gilt_fuer": "beide" },
+            { "name": "Geröstete Mandel", "gilt_fuer": "beide" },
+            { "name": "Keks", "gilt_fuer": "kaffee" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "erdig_mikrobiologisch",
+      "name": "Erdig",
+      "farbe": "#5C6E58",
+      "unterkategorien": [
+        {
+          "id": "erdig",
+          "name": "Erdig",
+          "aromen": [
+            { "name": "Waldboden", "gilt_fuer": "wein" },
+            { "name": "Champignon", "gilt_fuer": "wein" },
+            { "name": "Nasse Erde", "gilt_fuer": "beide" },
+            { "name": "Trüffel", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "hefe_milchprodukte",
+          "name": "Hefe / Milch",
+          "aromen": [
+            { "name": "Hefe", "gilt_fuer": "wein" },
+            { "name": "Joghurt", "gilt_fuer": "wein" },
+            { "name": "Butter", "gilt_fuer": "beide" },
+            { "name": "Käse", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "fermentiert_animalisch",
+          "name": "Fermentiert",
+          "aromen": [
+            { "name": "Leder", "gilt_fuer": "wein" },
+            { "name": "Sherry", "gilt_fuer": "wein" },
+            { "name": "Sojasauce", "gilt_fuer": "wein" },
+            { "name": "Überreif", "gilt_fuer": "kaffee" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "holzig_rauchig",
+      "name": "Holzig / Rauchig",
+      "farbe": "#8A5A2B",
+      "unterkategorien": [
+        {
+          "id": "holz",
+          "name": "Holz",
+          "aromen": [
+            { "name": "Eichenholz", "gilt_fuer": "wein" },
+            { "name": "Zedernholz", "gilt_fuer": "wein" },
+            { "name": "Sandelholz", "gilt_fuer": "wein" },
+            { "name": "Pfeifentabak", "gilt_fuer": "kaffee" }
+          ]
+        },
+        {
+          "id": "rauchig",
+          "name": "Rauchig",
+          "aromen": [
+            { "name": "Rauch", "gilt_fuer": "beide" },
+            { "name": "Speck", "gilt_fuer": "wein" },
+            { "name": "Teer", "gilt_fuer": "beide" },
+            { "name": "Asche", "gilt_fuer": "kaffee" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mineralisch",
+      "name": "Mineralisch",
+      "farbe": "#7F8B93",
+      "unterkategorien": [
+        {
+          "id": "stein_erde",
+          "name": "Stein",
+          "aromen": [
+            { "name": "Nasser Schiefer", "gilt_fuer": "wein" },
+            { "name": "Feuerstein", "gilt_fuer": "wein" },
+            { "name": "Kreide", "gilt_fuer": "wein" },
+            { "name": "Graphit", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "salzig_jod",
+          "name": "Salzig / Jod",
+          "aromen": [
+            { "name": "Jod", "gilt_fuer": "wein" },
+            { "name": "Meersalz", "gilt_fuer": "wein" },
+            { "name": "Muschel", "gilt_fuer": "wein" }
+          ]
+        }
+      ]
+    }
+  ]
+}

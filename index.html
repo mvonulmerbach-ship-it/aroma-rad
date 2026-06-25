@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aroma-Rad Wein &amp; Kaffee</title>
+<style>
+  :root { --bg:#fbfaf7; --ink:#2b2b2b; --muted:#6b6b6b; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  header { text-align:center; padding:18px 16px 6px; }
+  h1 { margin:0; font-size:clamp(18px,2.4vw,26px); letter-spacing:.3px; }
+  .sub { color:var(--muted); font-size:13px; margin-top:4px; }
+  .controls { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:14px 0 4px; }
+  .controls button { border:1px solid #cfc9bd; background:#fff; color:var(--ink);
+    padding:7px 16px; border-radius:999px; font-size:14px; cursor:pointer; transition:.15s; }
+  .controls button:hover { border-color:#999; }
+  .controls button.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .wrap { width:100%; max-width:900px; margin:0 auto; padding:8px 10px 28px; }
+  svg { width:100%; height:auto; display:block; }
+  .seg { stroke:#fff; stroke-width:1; transition:opacity .15s; }
+  .seg:hover { opacity:.78; }
+  .lbl { fill:#1f1f1f; pointer-events:none; }
+  .lbl-cat { fill:#fff; font-weight:700; pointer-events:none; }
+  .lbl-sub { fill:#2b2b2b; font-weight:600; pointer-events:none; }
+  .count { color:var(--muted); font-size:12px; text-align:center; margin-top:6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Aroma-Rad · Wein &amp; Kaffee</h1>
+  <div class="sub">3 Ebenen · klick auf einen Filter, um nach Getränk zu wechseln</div>
+  <div class="controls">
+    <button data-f="beide" class="active">Wein &amp; Kaffee</button>
+    <button data-f="wein">Nur Wein</button>
+    <button data-f="kaffee">Nur Kaffee</button>
+  </div>
+</header>
+<div class="wrap">
+  <svg id="wheel" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" aria-label="Aroma-Rad"></svg>
+  <div class="count" id="count"></div>
+</div>
+
+<script>
+const DATA = {
+  "meta": {
+    "titel": "Aroma-Rad Wein & Kaffee",
+    "beschreibung": "Kombiniertes 3-Ebenen-Aromarad für Wein und Kaffee. Ebene 1 = Hauptkategorie, Ebene 2 = Unterkategorie, Ebene 3 = konkrete Aromen. Jedes Aroma ist mit 'gilt_fuer' getaggt (wein | kaffee | beide), sodass aus denselben Daten ein Wein-, ein Kaffee- oder ein kombiniertes Rad gerendert werden kann.",
+    "version": "1.1",
+    "sprache": "de",
+    "stand": "2026-06-25",
+    "tag_werte": ["wein", "kaffee", "beide"],
+    "hinweis_skalierung": "Struktur ist bewusst rekursiv: kategorien[] -> unterkategorien[] -> aromen[]. Jede Ebene hat eine stabile 'id'. Farben sind pro Hauptkategorie definiert; Unterkategorien/Aromen können Helligkeitsabstufungen davon ableiten. Daraus lässt sich ein skalierbares SVG/interaktives Rad generieren."
+  },
+  "kategorien": [
+    {
+      "id": "fruchtig",
+      "name": "Fruchtig",
+      "farbe": "#E84C5A",
+      "unterkategorien": [
+        {
+          "id": "zitrusfrucht",
+          "name": "Zitrusfrucht",
+          "aromen": [
+            { "name": "Zitrone", "gilt_fuer": "beide" },
+            { "name": "Limette", "gilt_fuer": "beide" },
+            { "name": "Grapefruit", "gilt_fuer": "beide" },
+            { "name": "Orange", "gilt_fuer": "beide" },
+            { "name": "Mandarine", "gilt_fuer": "beide" },
+            { "name": "Orangenschale", "gilt_fuer": "beide" }
+          ]
+        },
+        {
+          "id": "gruene_frucht",
+          "name": "Grüne Frucht",
+          "aromen": [
+            { "name": "Grüner Apfel", "gilt_fuer": "wein" },
+            { "name": "Reifer Apfel", "gilt_fuer": "wein" },
+            { "name": "Birne", "gilt_fuer": "wein" },
+            { "name": "Stachelbeere", "gilt_fuer": "wein" },
+            { "name": "Quitte", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "steinobst",
+          "name": "Steinobst",
+          "aromen": [
+            { "name": "Pfirsich", "gilt_fuer": "wein" },
+            { "name": "Aprikose", "gilt_fuer": "beide" },
+            { "name": "Nektarine", "gilt_fuer": "wein" },
+            { "name": "Pflaume", "gilt_fuer": "beide" },
+            { "name": "Kirsche", "gilt_fuer": "beide" }
+          ]
+        },
+        {
+          "id": "rote_beeren",
+          "name": "Rote Beeren",
+          "aromen": [
+            { "name": "Erdbeere", "gilt_fuer": "beide" },
+            { "name": "Himbeere", "gilt_fuer": "beide" },
+            { "name": "Rote Johannisbeere", "gilt_fuer": "beide" },
+            { "name": "Preiselbeere", "gilt_fuer": "wein" },
+            { "name": "Sauerkirsche", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "dunkle_beeren",
+          "name": "Dunkle Beeren",
+          "aromen": [
+            { "name": "Brombeere", "gilt_fuer": "beide" },
+            { "name": "Cassis", "gilt_fuer": "beide" },
+            { "name": "Heidelbeere", "gilt_fuer": "beide" },
+            { "name": "Holunder", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "tropische_frucht",
+          "name": "Tropische Frucht",
+          "aromen": [
+            { "name": "Banane", "gilt_fuer": "beide" },
+            { "name": "Ananas", "gilt_fuer": "beide" },
+            { "name": "Mango", "gilt_fuer": "beide" },
+            { "name": "Litschi", "gilt_fuer": "wein" },
+            { "name": "Maracuja", "gilt_fuer": "beide" },
+            { "name": "Honigmelone", "gilt_fuer": "wein" },
+            { "name": "Guave", "gilt_fuer": "kaffee" }
+          ]
+        },
+        {
+          "id": "getrocknete_frucht",
+          "name": "Trockenfrucht",
+          "aromen": [
+            { "name": "Rosine", "gilt_fuer": "beide" },
+            { "name": "Getr. Aprikose", "gilt_fuer": "beide" },
+            { "name": "Dörrpflaume", "gilt_fuer": "beide" },
+            { "name": "Feige", "gilt_fuer": "beide" },
+            { "name": "Dattel", "gilt_fuer": "kaffee" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blumig",
+      "name": "Blumig",
+      "farbe": "#E89AC0",
+      "unterkategorien": [
+        {
+          "id": "weisse_blueten",
+          "name": "Weiße Blüten",
+          "aromen": [
+            { "name": "Akazie", "gilt_fuer": "wein" },
+            { "name": "Holunderblüte", "gilt_fuer": "wein" },
+            { "name": "Jasmin", "gilt_fuer": "beide" },
+            { "name": "Orangenblüte", "gilt_fuer": "beide" }
+          ]
+        },
+        {
+          "id": "duftblueten",
+          "name": "Duftblüten",
+          "aromen": [
+            { "name": "Rose", "gilt_fuer": "beide" },
+            { "name": "Veilchen", "gilt_fuer": "wein" },
+            { "name": "Flieder", "gilt_fuer": "wein" },
+            { "name": "Lavendel", "gilt_fuer": "wein" },
+            { "name": "Geranie", "gilt_fuer": "wein" },
+            { "name": "Kamille", "gilt_fuer": "beide" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pflanzlich",
+      "name": "Pflanzlich",
+      "farbe": "#7DA34D",
+      "unterkategorien": [
+        {
+          "id": "frisch_gruen",
+          "name": "Frisch-Grün",
+          "aromen": [
+            { "name": "Grünes Gras", "gilt_fuer": "beide" },
+            { "name": "Grüne Paprika", "gilt_fuer": "wein" },
+            { "name": "Tomatenblatt", "gilt_fuer": "wein" },
+            { "name": "Brennnessel", "gilt_fuer": "wein" },
+            { "name": "Erbsenschote", "gilt_fuer": "kaffee" }
+          ]
+        },
+        {
+          "id": "kraeuter",
+          "name": "Kräuter",
+          "aromen": [
+            { "name": "Minze", "gilt_fuer": "beide" },
+            { "name": "Eukalyptus", "gilt_fuer": "wein" },
+            { "name": "Thymian", "gilt_fuer": "wein" },
+            { "name": "Fenchel", "gilt_fuer": "wein" },
+            { "name": "Dill", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "gemuese_gekocht",
+          "name": "Gemüse",
+          "aromen": [
+            { "name": "Grüne Bohne", "gilt_fuer": "beide" },
+            { "name": "Spargel", "gilt_fuer": "wein" },
+            { "name": "Artischocke", "gilt_fuer": "wein" },
+            { "name": "Rote Bete", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "getrocknet_pflanzlich",
+          "name": "Getrocknet",
+          "aromen": [
+            { "name": "Heu", "gilt_fuer": "wein" },
+            { "name": "Tabak", "gilt_fuer": "beide" },
+            { "name": "Schwarzer Tee", "gilt_fuer": "beide" },
+            { "name": "Walnussschale", "gilt_fuer": "wein" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wuerzig",
+      "name": "Würzig",
+      "farbe": "#C8642A",
+      "unterkategorien": [
+        {
+          "id": "suesse_gewuerze",
+          "name": "Süße Gewürze",
+          "aromen": [
+            { "name": "Vanille", "gilt_fuer": "beide" },
+            { "name": "Zimt", "gilt_fuer": "beide" },
+            { "name": "Muskatnuss", "gilt_fuer": "beide" },
+            { "name": "Nelke", "gilt_fuer": "beide" },
+            { "name": "Anis", "gilt_fuer": "beide" }
+          ]
+        },
+        {
+          "id": "pikante_gewuerze",
+          "name": "Pikante Gewürze",
+          "aromen": [
+            { "name": "Schwarzer Pfeffer", "gilt_fuer": "beide" },
+            { "name": "Lakritz", "gilt_fuer": "beide" },
+            { "name": "Ingwer", "gilt_fuer": "wein" },
+            { "name": "Wacholder", "gilt_fuer": "wein" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suess_karamell",
+      "name": "Süß / Karamell",
+      "farbe": "#B5742E",
+      "unterkategorien": [
+        {
+          "id": "zucker_karamell",
+          "name": "Zucker",
+          "aromen": [
+            { "name": "Karamell", "gilt_fuer": "beide" },
+            { "name": "Toffee", "gilt_fuer": "kaffee" },
+            { "name": "Brauner Zucker", "gilt_fuer": "kaffee" },
+            { "name": "Ahornsirup", "gilt_fuer": "kaffee" },
+            { "name": "Melasse", "gilt_fuer": "kaffee" },
+            { "name": "Honig", "gilt_fuer": "beide" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "geroestet_nussig",
+      "name": "Geröstet / Nussig",
+      "farbe": "#6E4226",
+      "unterkategorien": [
+        {
+          "id": "nuesse",
+          "name": "Nüsse",
+          "aromen": [
+            { "name": "Mandel", "gilt_fuer": "beide" },
+            { "name": "Haselnuss", "gilt_fuer": "beide" },
+            { "name": "Walnuss", "gilt_fuer": "beide" },
+            { "name": "Erdnuss", "gilt_fuer": "kaffee" },
+            { "name": "Kokosnuss", "gilt_fuer": "beide" }
+          ]
+        },
+        {
+          "id": "kakao_schokolade",
+          "name": "Kakao",
+          "aromen": [
+            { "name": "Dunkle Schokolade", "gilt_fuer": "beide" },
+            { "name": "Kakao", "gilt_fuer": "beide" },
+            { "name": "Milchschokolade", "gilt_fuer": "beide" }
+          ]
+        },
+        {
+          "id": "roestaromen",
+          "name": "Röstaromen",
+          "aromen": [
+            { "name": "Röstkaffee", "gilt_fuer": "beide" },
+            { "name": "Toast", "gilt_fuer": "beide" },
+            { "name": "Frisches Brot", "gilt_fuer": "beide" },
+            { "name": "Malz", "gilt_fuer": "beide" },
+            { "name": "Geröstete Mandel", "gilt_fuer": "beide" },
+            { "name": "Keks", "gilt_fuer": "kaffee" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "erdig_mikrobiologisch",
+      "name": "Erdig",
+      "farbe": "#5C6E58",
+      "unterkategorien": [
+        {
+          "id": "erdig",
+          "name": "Erdig",
+          "aromen": [
+            { "name": "Waldboden", "gilt_fuer": "wein" },
+            { "name": "Champignon", "gilt_fuer": "wein" },
+            { "name": "Nasse Erde", "gilt_fuer": "beide" },
+            { "name": "Trüffel", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "hefe_milchprodukte",
+          "name": "Hefe / Milch",
+          "aromen": [
+            { "name": "Hefe", "gilt_fuer": "wein" },
+            { "name": "Joghurt", "gilt_fuer": "wein" },
+            { "name": "Butter", "gilt_fuer": "beide" },
+            { "name": "Käse", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "fermentiert_animalisch",
+          "name": "Fermentiert",
+          "aromen": [
+            { "name": "Leder", "gilt_fuer": "wein" },
+            { "name": "Sherry", "gilt_fuer": "wein" },
+            { "name": "Sojasauce", "gilt_fuer": "wein" },
+            { "name": "Überreif", "gilt_fuer": "kaffee" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "holzig_rauchig",
+      "name": "Holzig / Rauchig",
+      "farbe": "#8A5A2B",
+      "unterkategorien": [
+        {
+          "id": "holz",
+          "name": "Holz",
+          "aromen": [
+            { "name": "Eichenholz", "gilt_fuer": "wein" },
+            { "name": "Zedernholz", "gilt_fuer": "wein" },
+            { "name": "Sandelholz", "gilt_fuer": "wein" },
+            { "name": "Pfeifentabak", "gilt_fuer": "kaffee" }
+          ]
+        },
+        {
+          "id": "rauchig",
+          "name": "Rauchig",
+          "aromen": [
+            { "name": "Rauch", "gilt_fuer": "beide" },
+            { "name": "Speck", "gilt_fuer": "wein" },
+            { "name": "Teer", "gilt_fuer": "beide" },
+            { "name": "Asche", "gilt_fuer": "kaffee" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mineralisch",
+      "name": "Mineralisch",
+      "farbe": "#7F8B93",
+      "unterkategorien": [
+        {
+          "id": "stein_erde",
+          "name": "Stein",
+          "aromen": [
+            { "name": "Nasser Schiefer", "gilt_fuer": "wein" },
+            { "name": "Feuerstein", "gilt_fuer": "wein" },
+            { "name": "Kreide", "gilt_fuer": "wein" },
+            { "name": "Graphit", "gilt_fuer": "wein" }
+          ]
+        },
+        {
+          "id": "salzig_jod",
+          "name": "Salzig / Jod",
+          "aromen": [
+            { "name": "Jod", "gilt_fuer": "wein" },
+            { "name": "Meersalz", "gilt_fuer": "wein" },
+            { "name": "Muschel", "gilt_fuer": "wein" }
+          ]
+        }
+      ]
+    }
+  ]
+}
+;
+
+const SVG_NS="http://www.w3.org/2000/svg";
+const FONTFAM='-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+const CX=500, CY=500;
+const R0=105;   // inner hole
+const R1=235;   // end of category ring
+const R2=345;   // end of subcategory ring
+const R3=495;   // end of aroma ring
+const GAP=0.005;
+// target (preferred) sizes per ring – only reduced if neither orientation fits
+const CAT_SIZE=15, SUB_SIZE=13, LEAF_SIZE=12;
+const MIN_SIZE=6;
+
+const el=id=>document.getElementById(id);
+const wheel=el('wheel');
+let defsLayer, uid=0;
+
+// ---- text measurement so labels always fit ----
+const _c=document.createElement('canvas').getContext('2d');
+function measure(txt,size,weight){ _c.font=(weight||'400')+' '+size+'px '+FONTFAM; return _c.measureText(txt).width||1; }
+// size whose width == budget (unclamped)
+function sizeFor(txt,budget,weight){ return budget*10/measure(txt,10,weight); }
+
+function polar(r,a){ return [CX+r*Math.cos(a), CY+r*Math.sin(a)]; }
+function arcPath(r0,r1,a0,a1){
+  const [x0,y0]=polar(r1,a0),[x1,y1]=polar(r1,a1);
+  const [x2,y2]=polar(r0,a1),[x3,y3]=polar(r0,a0);
+  const large=(a1-a0)>Math.PI?1:0;
+  return `M${x0} ${y0} A${r1} ${r1} 0 ${large} 1 ${x1} ${y1} L${x2} ${y2} A${r0} ${r0} 0 ${large} 0 ${x3} ${y3} Z`;
+}
+function mk(tag,attrs,text){
+  const e=document.createElementNS(SVG_NS,tag);
+  for(const k in attrs) e.setAttribute(k,attrs[k]);
+  if(text!=null) e.textContent=text;
+  return e;
+}
+function lighten(hex,t){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.round(r+(255-r)*t); g=Math.round(g+(255-g)*t); b=Math.round(b+(255-b)*t);
+  return `rgb(${r},${g},${b})`;
+}
+function fits(filter,tag){ return filter==='beide'?true:(tag==='beide'||tag===filter); }
+
+// tangential (curved along arc) text at a fixed size
+function curvedAt(rMid,a0,a1,txt,cls,weight,size){
+  const mid=(a0+a1)/2, flip=(mid>0&&mid<Math.PI);
+  const id='p'+(uid++);
+  let d;
+  if(flip){ const [x0,y0]=polar(rMid,a1),[x1,y1]=polar(rMid,a0); d=`M${x0} ${y0} A${rMid} ${rMid} 0 0 0 ${x1} ${y1}`; }
+  else    { const [x0,y0]=polar(rMid,a0),[x1,y1]=polar(rMid,a1); d=`M${x0} ${y0} A${rMid} ${rMid} 0 0 1 ${x1} ${y1}`; }
+  defsLayer.appendChild(mk('path',{id:id,d:d,fill:'none'}));
+  const t=mk('text',{class:cls,'font-size':size.toFixed(2),'text-anchor':'middle','dominant-baseline':'middle'});
+  t.appendChild(mk('textPath',{href:'#'+id,startOffset:'50%'},txt));
+  return t;
+}
+// radial (from centre outward) text at a fixed size, centred in its band
+function radialAt(rMid,angle,txt,cls,weight,size){
+  let deg=angle*180/Math.PI;
+  if(deg>90&&deg<270) deg+=180;
+  const [x,y]=polar(rMid,angle);
+  return mk('text',{x:x,y:y,class:cls,'font-size':size.toFixed(2),'font-weight':weight,
+    'text-anchor':'middle','dominant-baseline':'middle',transform:`rotate(${deg} ${x} ${y})`},txt);
+}
+
+// Decide orientation: keep target size, switch tangential -> radial before shrinking.
+function bandLabel(rIn,rOut,a0,a1,txt,cls,weight,target){
+  const rMid=(rIn+rOut)/2, band=rOut-rIn, mid=(a0+a1)/2;
+  const arc=(a1-a0)*rMid;            // tangential length available
+  // 1) tangential at full target size?
+  if(measure(txt,target,weight)<=arc*0.90 && target<=band*0.82)
+    return curvedAt(rMid,a0,a1,txt,cls,weight,target);
+  // 2) radial at full target size? (length budget = band depth, height = angular room)
+  if(measure(txt,target,weight)<=band*0.90 && target<=arc*0.92)
+    return radialAt(rMid,mid,txt,cls,weight,target);
+  // 3) neither orientation fits at target -> shrink, choosing the roomier orientation
+  const sT=Math.min(sizeFor(txt,arc*0.90,weight), band*0.82);
+  const sR=Math.min(sizeFor(txt,band*0.90,weight), arc*0.92);
+  if(sR>=sT) return radialAt(rMid,mid,txt,cls,weight,Math.max(MIN_SIZE,sR));
+  return curvedAt(rMid,a0,a1,txt,cls,weight,Math.max(MIN_SIZE,sT));
+}
+
+// outer-ring leaf label: always radial; shrink only if needed
+function leafLabel(rIn,rOut,angle,txt){
+  const budget=(rOut-rIn)-6;
+  let size=Math.min(LEAF_SIZE, sizeFor(txt,budget,'400'));
+  size=Math.max(MIN_SIZE,size);
+  let deg=angle*180/Math.PI, anchor='start';
+  if(deg>90&&deg<270){ deg+=180; anchor='end'; }
+  const r=(deg>90&&deg<270)? rOut-3 : rIn+3;
+  const [x,y]=polar(r,angle);
+  return mk('text',{x:x,y:y,class:'lbl','font-size':size.toFixed(2),'text-anchor':anchor,
+    'dominant-baseline':'middle',transform:`rotate(${deg} ${x} ${y})`},txt);
+}
+
+function render(filter){
+  wheel.innerHTML=''; uid=0;
+  defsLayer=mk('defs',{}); wheel.appendChild(defsLayer);
+
+  const cats=[]; let total=0;
+  for(const c of DATA.kategorien){
+    const subs=[];
+    for(const s of c.unterkategorien){
+      const leaves=s.aromen.filter(a=>fits(filter,a.gilt_fuer));
+      if(leaves.length) subs.push({...s,aromen:leaves});
+    }
+    const n=subs.reduce((m,s)=>m+s.aromen.length,0);
+    if(n){ cats.push({...c,unterkategorien:subs,_n:n}); total+=n; }
+  }
+
+  let a=-Math.PI/2;
+  const per=(2*Math.PI - cats.length*GAP)/total;
+
+  for(const c of cats){
+    const span=c._n*per, ca0=a, ca1=a+span;
+    wheel.appendChild(mk('path',{class:'seg',d:arcPath(R0,R1,ca0,ca1),fill:c.farbe}));
+    let sa=ca0;
+    for(const s of c.unterkategorien){
+      const sspan=s.aromen.length*per, sa0=sa, sa1=sa+sspan;
+      wheel.appendChild(mk('path',{class:'seg',d:arcPath(R1,R2,sa0,sa1),fill:lighten(c.farbe,.42)}));
+      let la=sa0;
+      for(const leaf of s.aromen){
+        const la0=la,la1=la+per;
+        wheel.appendChild(mk('path',{class:'seg',d:arcPath(R2,R3,la0,la1),fill:lighten(c.farbe,.74)}));
+        wheel.appendChild(leafLabel(R2,R3,(la0+la1)/2,leaf.name));
+        la=la1;
+      }
+      wheel.appendChild(bandLabel(R1,R2,sa0,sa1,s.name,'lbl-sub','600',SUB_SIZE));
+      sa=sa1;
+    }
+    wheel.appendChild(bandLabel(R0,R1,ca0,ca1,c.name.toUpperCase(),'lbl-cat','700',CAT_SIZE));
+    a=ca1+GAP;
+  }
+
+  wheel.appendChild(mk('circle',{cx:CX,cy:CY,r:R0-6,fill:'#fff',stroke:'#e6e1d6','stroke-width':2}));
+  wheel.appendChild(mk('text',{x:CX,y:CY-7,'text-anchor':'middle','font-size':20,'font-weight':700,fill:'#3a3a3a'},'AROMA'));
+  wheel.appendChild(mk('text',{x:CX,y:CY+16,'text-anchor':'middle','font-size':13,fill:'#8a8a8a'},
+    filter==='wein'?'Wein':filter==='kaffee'?'Kaffee':'Wein & Kaffee'));
+  el('count').textContent=`${cats.length} Kategorien · ${total} Aromen angezeigt`;
+}
+
+document.querySelectorAll('.controls button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.controls button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    render(b.dataset.f);
+  });
+});
+
+render('beide');
+if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(()=>{
+  render(document.querySelector('.controls button.active').dataset.f);
+}); }
+</script>
+</body>
+</html>
