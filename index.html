@@ -5,18 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aroma-Rad Wein &amp; Kaffee</title>
 <style>
-  :root { --bg:#fbfaf7; --ink:#2b2b2b; --muted:#6b6b6b; }
+  :root { --bg:#fbfaf7; --ink:#2b2b2b; --muted:#6b6b6b;
+    --hub:#ffffff; --hubink:#3a3a3a; --hubsub:#8a8a8a; --line:#e6e1d6;
+    --btnbg:#ffffff; --btnborder:#cfc9bd;
+    --zbg:rgba(255,255,255,.92); --zborder:#cfc9bd; --zink:#2b2b2b; }
+  [data-theme="dark"] { --bg:#17131a; --ink:#f3ebef; --muted:#a899a3;
+    --hub:#221b27; --hubink:#f3ebef; --hubsub:#a899a3; --line:#332a39;
+    --btnbg:#221b27; --btnborder:#443a4d;
+    --zbg:rgba(34,27,39,.92); --zborder:#443a4d; --zink:#f3ebef; }
   * { box-sizing:border-box; }
   html,body { margin:0; padding:0; background:var(--bg); color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; transition:background .2s,color .2s; }
   header { text-align:center; padding:16px 16px 4px; }
   h1 { margin:0; font-size:clamp(18px,2.4vw,26px); letter-spacing:.3px; }
   .sub { color:var(--muted); font-size:13px; margin-top:4px; }
   .controls { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:12px 0 4px; }
-  .controls button { border:1px solid #cfc9bd; background:#fff; color:var(--ink);
+  .controls button { border:1px solid var(--btnborder); background:var(--btnbg); color:var(--ink);
     padding:7px 16px; border-radius:999px; font-size:14px; cursor:pointer; transition:.15s; }
   .controls button:hover { border-color:#999; }
-  .controls button.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .controls button.active { background:var(--ink); color:var(--bg); border-color:var(--ink); }
   .crumb { min-height:24px; text-align:center; margin:6px 0 0; font-size:14px; font-weight:600; }
   .crumb .sep { color:#bbb; font-weight:400; margin:0 5px; }
   .crumb .clear { color:var(--muted); font-weight:400; font-size:12px; margin-left:10px;
@@ -33,20 +40,22 @@
   .lbl-cat { fill:#fff; font-weight:700; pointer-events:none; }
   .lbl-sub { fill:#2b2b2b; font-weight:600; pointer-events:none; }
   .dim { opacity:.13 !important; }
+  #hub { fill:var(--hub); stroke:var(--line); }
+  text.hubt { fill:var(--hubink); }
+  text.hubs { fill:var(--hubsub); }
   .zoom { position:absolute; right:10px; bottom:10px; display:flex; flex-direction:column; gap:6px; }
-  .zoom button { width:38px; height:38px; border:1px solid #cfc9bd; background:rgba(255,255,255,.92);
-    border-radius:10px; font-size:20px; line-height:1; color:var(--ink); cursor:pointer;
+  .zoom button { width:38px; height:38px; border:1px solid var(--zborder); background:var(--zbg);
+    border-radius:10px; font-size:20px; line-height:1; color:var(--zink); cursor:pointer;
     box-shadow:0 1px 3px rgba(0,0,0,.12); display:flex; align-items:center; justify-content:center; }
-  .zoom button:hover { background:#fff; border-color:#999; }
-  .zoom button:active { transform:translateY(1px); }
+  .zoom button:hover { border-color:#999; }
   .hint { color:var(--muted); font-size:11px; text-align:center; margin-top:8px; }
   .count { color:var(--muted); font-size:12px; text-align:center; margin-top:2px; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Aroma-Rad · Wein &amp; Kaffee</h1>
-  <div class="sub">3 Ebenen · klick auf einen Filter, um nach Getränk zu wechseln</div>
+  <h1>Aroma-Rad &middot; Wein &amp; Kaffee</h1>
+  <div class="sub">3 Ebenen &middot; klick auf einen Filter, um nach Getr&auml;nk zu wechseln</div>
   <div class="controls">
     <button data-f="beide" class="active">Wein &amp; Kaffee</button>
     <button data-f="wein">Nur Wein</button>
@@ -58,15 +67,14 @@
   <div class="stage" id="stage">
     <svg id="wheel" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" aria-label="Aroma-Rad"></svg>
     <div class="zoom">
-      <button id="zin" title="Vergrößern" aria-label="Vergrößern">+</button>
-      <button id="zout" title="Verkleinern" aria-label="Verkleinern">−</button>
-      <button id="zreset" title="Zurücksetzen" aria-label="Zurücksetzen" style="font-size:15px;">⟳</button>
+      <button id="zin" title="Vergr&ouml;&szlig;ern" aria-label="Vergr&ouml;&szlig;ern">+</button>
+      <button id="zout" title="Verkleinern" aria-label="Verkleinern">&minus;</button>
+      <button id="zreset" title="Zur&uuml;cksetzen" aria-label="Zur&uuml;cksetzen" style="font-size:15px;">&#10227;</button>
     </div>
   </div>
-  <div class="hint">Klick auf ein Aroma zeigt den Pfad · Mausrad/Pinch zoomt · ziehen verschiebt</div>
+  <div class="hint">Klick auf ein Aroma zeigt den Pfad &middot; Mausrad/Pinch zoomt &middot; ziehen verschiebt</div>
   <div class="count" id="count"></div>
 </div>
-
 <script>
 const DATA = {
   "meta": {
@@ -420,24 +428,19 @@ const DATA = {
       ]
     }
   ]
-}
-;
-
+};
 const SVG_NS="http://www.w3.org/2000/svg";
 const FONTFAM='-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
 const CX=500, CY=500;
 const R0=105, R1=235, R2=345, R3=495;
 const GAP=0.005;
 const CAT_SIZE=15, SUB_SIZE=13, LEAF_SIZE=12, MIN_SIZE=6;
-
 const el=id=>document.getElementById(id);
 const wheel=el('wheel'), stage=el('stage');
 let defsLayer, uid=0;
-
 const _c=document.createElement('canvas').getContext('2d');
 function measure(txt,size,weight){ _c.font=(weight||'400')+' '+size+'px '+FONTFAM; return _c.measureText(txt).width||1; }
 function sizeFor(txt,budget,weight){ return budget*10/measure(txt,10,weight); }
-
 function polar(r,a){ return [CX+r*Math.cos(a), CY+r*Math.sin(a)]; }
 function arcPath(r0,r1,a0,a1){
   const [x0,y0]=polar(r1,a0),[x1,y1]=polar(r1,a1);
@@ -458,15 +461,12 @@ function lighten(hex,t){
   return `rgb(${r},${g},${b})`;
 }
 function fits(filter,tag){ return filter==='beide'?true:(tag==='beide'||tag===filter); }
-
-// attach identity (category/subcategory/leaf) so segments & labels can be highlighted together
 function setId(e,cat,sub,leaf,level,cn,sn){
   e.setAttribute('data-cat',cat); e.setAttribute('data-level',level);
   if(sub){ e.setAttribute('data-sub',sub); e.setAttribute('data-sn',sn); }
   if(leaf) e.setAttribute('data-leaf',leaf);
   e.setAttribute('data-cn',cn);
 }
-
 function curvedAt(rMid,a0,a1,txt,cls,weight,size){
   const mid=(a0+a1)/2, flip=(mid>0&&mid<Math.PI);
   const id='p'+(uid++);
@@ -508,7 +508,6 @@ function leafLabel(rIn,rOut,angle,txt){
   return mk('text',{x:x,y:y,class:'lbl','font-size':size.toFixed(2),'text-anchor':anchor,
     'dominant-baseline':'middle',transform:`rotate(${deg} ${x} ${y})`},txt);
 }
-
 function render(filter){
   wheel.innerHTML=''; uid=0; sel=null; updateCrumb();
   defsLayer=mk('defs',{}); wheel.appendChild(defsLayer);
@@ -550,15 +549,13 @@ function render(filter){
     setId(cl,c.id,'','',1,c.name,''); wheel.appendChild(cl);
     a=ca1+GAP;
   }
-  wheel.appendChild(mk('circle',{id:'hub',cx:CX,cy:CY,r:R0-6,fill:'#fff',stroke:'#e6e1d6','stroke-width':2}));
-  wheel.appendChild(mk('text',{x:CX,y:CY-7,'text-anchor':'middle','font-size':20,'font-weight':700,fill:'#3a3a3a','pointer-events':'none'},'AROMA'));
-  wheel.appendChild(mk('text',{x:CX,y:CY+16,'text-anchor':'middle','font-size':13,fill:'#8a8a8a','pointer-events':'none'},
+  wheel.appendChild(mk('circle',{id:'hub',cx:CX,cy:CY,r:R0-6,'stroke-width':2}));
+  wheel.appendChild(mk('text',{x:CX,y:CY-7,class:'hubt','text-anchor':'middle','font-size':20,'font-weight':700,'pointer-events':'none'},'AROMA'));
+  wheel.appendChild(mk('text',{x:CX,y:CY+16,class:'hubs','text-anchor':'middle','font-size':13,'pointer-events':'none'},
     filter==='wein'?'Wein':filter==='kaffee'?'Kaffee':'Wein & Kaffee'));
   el('count').textContent=`${cats.length} Kategorien · ${total} Aromen angezeigt`;
 }
-
-/* ---------- Pfad-Hervorhebung ---------- */
-let sel=null; // {cat,sub,leaf,level,cn,sn}
+let sel=null;
 function applyHighlight(){
   const all=wheel.querySelectorAll('[data-cat]');
   all.forEach(e=>{
@@ -601,8 +598,6 @@ function handleTap(cx,cy){
   if(t && t.tagName==='path' && t.classList.contains('seg')) selectFromEl(t);
   else clearSel();
 }
-
-/* ---------- Zoom & Pan via viewBox ---------- */
 const VB={x:0,y:0,w:1000,h:1000};
 const MIN_W=160, MAX_W=1000;
 function applyVB(){ wheel.setAttribute('viewBox',`${VB.x} ${VB.y} ${VB.w} ${VB.h}`); }
@@ -623,9 +618,7 @@ function clampPan(){
   VB.y=Math.max(-m,Math.min(1000+m-VB.h,VB.y));
 }
 function resetVB(){ VB.x=0;VB.y=0;VB.w=1000;VB.h=1000; applyVB(); }
-
 stage.addEventListener('wheel',e=>{ e.preventDefault(); zoomAt(e.clientX,e.clientY,e.deltaY>0?1.12:0.89); },{passive:false});
-
 const pts=new Map(); let pinchPrev=0, dragMoved=false, downX=0, downY=0;
 stage.addEventListener('pointerdown',e=>{
   stage.setPointerCapture(e.pointerId);
@@ -662,11 +655,9 @@ function endPtr(e){
 stage.addEventListener('pointerup',endPtr);
 stage.addEventListener('pointercancel',endPtr);
 stage.addEventListener('dblclick',e=>{ e.preventDefault(); zoomAt(e.clientX,e.clientY,0.6); });
-
 el('zin').addEventListener('click',()=>{ const r=wheel.getBoundingClientRect(); zoomAt(r.left+r.width/2,r.top+r.height/2,0.8); });
 el('zout').addEventListener('click',()=>{ const r=wheel.getBoundingClientRect(); zoomAt(r.left+r.width/2,r.top+r.height/2,1.25); });
 el('zreset').addEventListener('click',resetVB);
-
 document.querySelectorAll('.controls button').forEach(b=>{
   b.addEventListener('click',()=>{
     document.querySelectorAll('.controls button').forEach(x=>x.classList.remove('active'));
@@ -674,7 +665,17 @@ document.querySelectorAll('.controls button').forEach(b=>{
     render(b.dataset.f);
   });
 });
-
+function setTheme(t){ document.documentElement.setAttribute('data-theme', t==='dark'?'dark':'light'); }
+(function initTheme(){
+  const p=new URLSearchParams(location.search).get('theme');
+  if(p==='dark'||p==='light') setTheme(p);
+  else if(window.matchMedia) setTheme(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  else setTheme('light');
+})();
+window.addEventListener('message',e=>{
+  const d=e.data;
+  if(d && d.type==='aromarad-theme' && (d.value==='dark'||d.value==='light')) setTheme(d.value);
+});
 render('beide'); applyVB();
 if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(()=>{
   render(document.querySelector('.controls button.active').dataset.f);
