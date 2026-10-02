@@ -2,8 +2,25 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fbfaf7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Aroma-Rad">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-512.png">
 <title>Aroma-Rad Wein &amp; Kaffee</title>
+<script>
+/* Quelle aller Aromarad-Kopien ist das Repo aroma-rad (siehe README): nur dort aendern, dann kopieren.
+   Hell/Dunkel ohne Aufblitzen: ?theme= der einbettenden App hat Vorrang, sonst die gespeicherte Wahl
+   (aroma_theme, nur als eigenstaendige App), sonst die Systemeinstellung.
+   Das Manifest gibt es nur unter /aroma-rad/ - die Kopien in anderen Apps bleiben reine Komponenten. */
+(function(){var p=new URLSearchParams(location.search).get("theme"),w="system",frei=window.top===window;
+if(p==="dark"||p==="light")w=p;else if(frei){try{w=localStorage.getItem("aroma_theme")||"system"}catch(e){}}
+var d=w==="dark"||(w!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);
+document.documentElement.setAttribute("data-theme",d?"dark":"light");
+if(frei&&location.pathname.indexOf("/aroma-rad/")>-1){var l=document.createElement("link");l.rel="manifest";l.href="manifest.webmanifest";document.head.appendChild(l);}})();
+</script>
 <style>
   :root { --bg:#fbfaf7; --ink:#2b2b2b; --muted:#6b6b6b;
     --hub:#ffffff; --hubink:#3a3a3a; --hubsub:#8a8a8a; --line:#e6e1d6;
@@ -16,18 +33,22 @@
   * { box-sizing:border-box; }
   html,body { margin:0; padding:0; background:var(--bg); color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; transition:background .2s,color .2s; }
-  header { text-align:center; padding:16px 16px 4px; }
+  header { position:relative; text-align:center; padding:16px 16px 4px; }
   h1 { margin:0; font-size:clamp(18px,2.4vw,26px); letter-spacing:.3px; }
   .sub { color:var(--muted); font-size:13px; margin-top:4px; }
   .controls { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:12px 0 4px; }
   .controls button { border:1px solid var(--btnborder); background:var(--btnbg); color:var(--ink);
-    padding:7px 16px; border-radius:999px; font-size:14px; cursor:pointer; transition:.15s; }
+    min-height:44px; padding:10px 16px; border-radius:999px; font-size:14px; cursor:pointer; transition:.15s; }
   .controls button:hover { border-color:#999; }
   .controls button.active { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  .themebtn { position:absolute; top:10px; right:10px; width:44px; height:44px; border-radius:10px;
+    border:1px solid var(--btnborder); background:var(--btnbg); color:var(--ink); font-size:18px; line-height:1;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .themebtn[hidden] { display:none; }
   .crumb { min-height:24px; text-align:center; margin:6px 0 0; font-size:14px; font-weight:600; }
-  .crumb .sep { color:#bbb; font-weight:400; margin:0 5px; }
-  .crumb .clear { color:var(--muted); font-weight:400; font-size:12px; margin-left:10px;
-    cursor:pointer; text-decoration:underline; }
+  .crumb .sep { color:var(--muted); font-weight:400; margin:0 5px; }
+  .crumb .clear { color:var(--muted); font:inherit; font-weight:400; font-size:13px; margin-left:6px;
+    min-height:44px; padding:0 10px; border:none; background:none; cursor:pointer; text-decoration:underline; }
   .wrap { width:100%; max-width:900px; margin:0 auto; padding:4px 10px 24px; }
   .stage { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden;
     border-radius:12px; touch-action:none; }
@@ -43,19 +64,31 @@
   #hub { fill:var(--hub); stroke:var(--line); }
   text.hubt { fill:var(--hubink); }
   text.hubs { fill:var(--hubsub); }
-  .zoom { position:absolute; right:10px; bottom:10px; display:flex; flex-direction:column; gap:6px; }
-  .zoom button { width:38px; height:38px; border:1px solid var(--zborder); background:var(--zbg);
+  /* 02.10.2026: Zoom-Knoepfe unter dem Rad statt darueber - sie verdeckten am Handy den Rand des Rads */
+  .zoom { display:flex; justify-content:center; gap:10px; margin-top:8px; }
+  .zoom button { width:44px; height:44px; border:1px solid var(--zborder); background:var(--zbg);
     border-radius:10px; font-size:20px; line-height:1; color:var(--zink); cursor:pointer;
     box-shadow:0 1px 3px rgba(0,0,0,.12); display:flex; align-items:center; justify-content:center; }
   .zoom button:hover { border-color:#999; }
-  .hint { color:var(--muted); font-size:11px; text-align:center; margin-top:8px; }
+  .hint { color:var(--muted); font-size:13px; text-align:center; margin-top:8px; }
   .count { color:var(--muted); font-size:12px; text-align:center; margin-top:2px; }
+  /* 02.10.2026: lesbare Liste unter dem Rad - Pfad und naechste Ebene, Antippen geht eine Ebene tiefer */
+  .liste { max-width:560px; margin:14px auto 0; }
+  .liste h2 { font-size:15px; font-weight:700; margin:0 0 8px; text-align:center; }
+  .liste button { display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:8px 12px;
+    margin-bottom:6px; font:inherit; font-size:15px; text-align:left; color:var(--ink); background:var(--btnbg);
+    border:1px solid var(--line); border-radius:10px; cursor:pointer; }
+  .liste button[aria-current="true"] { border-color:var(--ink); font-weight:700; }
+  .liste button.hoch { color:var(--muted); background:none; }
+  .liste .pkt { flex:none; width:14px; height:14px; border-radius:50%; border:1px solid rgba(0,0,0,.18); }
+  .liste .anz { margin-left:auto; color:var(--muted); font-size:14px; white-space:nowrap; }
 </style>
 </head>
 <body>
 <header>
   <h1>Aroma-Rad &middot; Wein &amp; Kaffee</h1>
-  <div class="sub">3 Ebenen &middot; klick auf einen Filter, um nach Getr&auml;nk zu wechseln</div>
+  <button class="themebtn" id="themebtn" type="button" hidden aria-label="Erscheinungsbild: System" title="Erscheinungsbild: System">&#9680;</button>
+  <div class="sub" id="subtxt">3 Ebenen &middot; klicke auf einen Filter, um nach Getr&auml;nk zu wechseln</div>
   <div class="controls">
     <button data-f="beide" class="active">Wein &amp; Kaffee</button>
     <button data-f="wein">Nur Wein</button>
@@ -66,14 +99,15 @@
 <div class="wrap">
   <div class="stage" id="stage">
     <svg id="wheel" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" aria-label="Aroma-Rad"></svg>
-    <div class="zoom">
-      <button id="zin" title="Vergr&ouml;&szlig;ern" aria-label="Vergr&ouml;&szlig;ern">+</button>
-      <button id="zout" title="Verkleinern" aria-label="Verkleinern">&minus;</button>
-      <button id="zreset" title="Zur&uuml;cksetzen" aria-label="Zur&uuml;cksetzen" style="font-size:15px;">&#10227;</button>
-    </div>
   </div>
-  <div class="hint">Klick auf ein Aroma zeigt den Pfad &middot; Mausrad/Pinch zoomt &middot; ziehen verschiebt</div>
+  <div class="zoom">
+    <button id="zout" title="Verkleinern" aria-label="Verkleinern">&minus;</button>
+    <button id="zreset" title="Zur&uuml;cksetzen" aria-label="Zur&uuml;cksetzen" style="font-size:15px;">&#10227;</button>
+    <button id="zin" title="Vergr&ouml;&szlig;ern" aria-label="Vergr&ouml;&szlig;ern">+</button>
+  </div>
+  <div class="hint" id="hint">Klick auf ein Aroma zeigt den Pfad &middot; Mausrad zoomt &middot; ziehen verschiebt</div>
   <div class="count" id="count"></div>
+  <div class="liste" id="liste"></div>
 </div>
 <script>
 const DATA = {
@@ -436,6 +470,8 @@ const R0=105, R1=235, R2=345, R3=495;
 const GAP=0.005;
 const CAT_SIZE=15, SUB_SIZE=13, LEAF_SIZE=12, MIN_SIZE=6;
 const el=id=>document.getElementById(id);
+let CATS=[];   // aktuell gezeichnete Kategorien (nach Filter) - Grundlage der Liste unter dem Rad
+const MIN_PX=11;   // 02.10.2026: Beschriftung nur, wenn sie wirksam >= 11 px gross ist
 const wheel=el('wheel'), stage=el('stage');
 let defsLayer, uid=0;
 const _c=document.createElement('canvas').getContext('2d');
@@ -554,6 +590,16 @@ function render(filter){
   wheel.appendChild(mk('text',{x:CX,y:CY+16,class:'hubs','text-anchor':'middle','font-size':13,'pointer-events':'none'},
     filter==='wein'?'Wein':filter==='kaffee'?'Kaffee':'Wein & Kaffee'));
   el('count').textContent=`${cats.length} Kategorien · ${total} Aromen angezeigt`;
+  CATS=cats; labelsAnpassen(); listeZeigen();
+}
+/* Wirksame Schriftgroesse = font-size im SVG x Massstab (getScreenCTM). Was darunter liegt, waere
+   am Handy 4-7 px gross und unlesbar: ausblenden; beim Zoomen erscheint es, sobald es lesbar ist. */
+function labelsAnpassen(){
+  const ctm=wheel.getScreenCTM(); if(!ctm) return;
+  const s=Math.hypot(ctm.a,ctm.b);
+  wheel.querySelectorAll('text[font-size]').forEach(t=>{
+    t.style.display = (+t.getAttribute('font-size'))*s>=MIN_PX ? '' : 'none';
+  });
 }
 let sel=null;
 function applyHighlight(){
@@ -575,15 +621,49 @@ function applyHighlight(){
 }
 function updateCrumb(){
   const c=el('crumb');
+  listeZeigen();
   if(!sel){ c.textContent=''; return; }
   let parts=[sel.cn];
   if(sel.level>=2) parts.push(sel.sn);
   if(sel.level>=3) parts.push(sel.leaf);
   c.innerHTML = parts.map(p=>`<span>${p}</span>`).join('<span class="sep">›</span>')
-    + '<span class="clear" id="clr">× zurücksetzen</span>';
+    + '<button type="button" class="clear" id="clr">× zurücksetzen</button>';
   el('clr').addEventListener('click',clearSel);
 }
 function clearSel(){ sel=null; applyHighlight(); updateCrumb(); }
+function waehle(s){ sel=s; applyHighlight(); updateCrumb(); }
+/* Liste unter dem Rad (>= 15 px, Zeilen 44 px): ohne Auswahl die Kategorien, sonst Pfad und die
+   naechste Ebene. Antippen geht eine Ebene tiefer, "‹" eine zurueck. */
+function listeZeigen(){
+  const box=el('liste'); if(!box) return; box.innerHTML='';
+  const kopf=document.createElement('h2'); box.appendChild(kopf);
+  const knopf=(txt,farbe,anz,fn,opt)=>{
+    const b=document.createElement('button'); b.type='button'; if(opt&&opt.cls) b.className=opt.cls;
+    if(farbe){ const p=document.createElement('span'); p.className='pkt'; p.style.background=farbe; b.appendChild(p); }
+    const t=document.createElement('span'); t.textContent=txt; b.appendChild(t);
+    if(anz!=null){ const a=document.createElement('span'); a.className='anz'; a.textContent=anz; b.appendChild(a); }
+    if(opt&&opt.aktuell) b.setAttribute('aria-current','true');
+    b.addEventListener('click',fn); box.appendChild(b);
+  };
+  if(!sel){
+    kopf.textContent='Kategorien';
+    CATS.forEach(c=>knopf(c.name,c.farbe,c._n+' ›',()=>waehle({cat:c.id,sub:null,leaf:null,level:1,cn:c.name,sn:''})));
+    return;
+  }
+  const c=CATS.find(x=>x.id===sel.cat); if(!c){ kopf.textContent=''; return; }
+  const s=sel.sub?c.unterkategorien.find(x=>x.id===sel.sub):null;
+  kopf.textContent=[c.name, s&&s.name, sel.leaf].filter(Boolean).join(' › ');
+  if(sel.level===1){
+    knopf('‹ Alle Kategorien',null,null,clearSel,{cls:'hoch'});
+    c.unterkategorien.forEach(u=>knopf(u.name,lighten(c.farbe,.42),u.aromen.length+' ›',
+      ()=>waehle({cat:c.id,sub:u.id,leaf:null,level:2,cn:c.name,sn:u.name})));
+  } else if(s){
+    if(sel.level===2) knopf('‹ '+c.name,null,null,()=>waehle({cat:c.id,sub:null,leaf:null,level:1,cn:c.name,sn:''}),{cls:'hoch'});
+    else knopf('‹ '+s.name,null,null,()=>waehle({cat:c.id,sub:s.id,leaf:null,level:2,cn:c.name,sn:s.name}),{cls:'hoch'});
+    s.aromen.forEach(a=>knopf(a.name,lighten(c.farbe,.74),null,
+      ()=>waehle({cat:c.id,sub:s.id,leaf:a.name,level:3,cn:c.name,sn:s.name}),{aktuell:sel.leaf===a.name}));
+  }
+}
 function selectFromEl(e){
   const cat=e.getAttribute('data-cat'); if(!cat) return;
   const sub=e.getAttribute('data-sub')||''; const leaf=e.getAttribute('data-leaf')||'';
@@ -600,7 +680,7 @@ function handleTap(cx,cy){
 }
 const VB={x:0,y:0,w:1000,h:1000};
 const MIN_W=160, MAX_W=1000;
-function applyVB(){ wheel.setAttribute('viewBox',`${VB.x} ${VB.y} ${VB.w} ${VB.h}`); }
+function applyVB(){ wheel.setAttribute('viewBox',`${VB.x} ${VB.y} ${VB.w} ${VB.h}`); labelsAnpassen(); }
 function clientToSvg(cx,cy){
   const r=wheel.getBoundingClientRect();
   return { x:VB.x+(cx-r.left)/r.width*VB.w, y:VB.y+(cy-r.top)/r.height*VB.h };
@@ -665,13 +745,44 @@ document.querySelectorAll('.controls button').forEach(b=>{
     render(b.dataset.f);
   });
 });
-function setTheme(t){ document.documentElement.setAttribute('data-theme', t==='dark'?'dark':'light'); }
-(function initTheme(){
-  const p=new URLSearchParams(location.search).get('theme');
-  if(p==='dark'||p==='light') setTheme(p);
-  else if(window.matchMedia) setTheme(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
-  else setTheme('light');
+/* Hell/Dunkel (02.10.2026): ?theme= der einbettenden App hat Vorrang. Eigenstaendig (nicht im iframe)
+   dreistufig System · Hell · Dunkel mit Schalter, Wahl in aroma_theme; im iframe kein Schalter. */
+const THEME_PARAM=(p=>(p==='dark'||p==='light')?p:null)(new URLSearchParams(location.search).get('theme'));
+const FREI=window.top===window;
+const THEME_FOLGE=['system','light','dark'], THEME_SYMBOL={system:'◐',light:'☀️',dark:'🌙'}, THEME_NAME={system:'System',light:'Hell',dark:'Dunkel'};
+const dunkelAbfrage=matchMedia('(prefers-color-scheme: dark)');
+let themeWahl='system';
+if(!THEME_PARAM&&FREI){ try{ themeWahl=localStorage.getItem('aroma_theme')||'system'; }catch(e){} if(THEME_FOLGE.indexOf(themeWahl)<0) themeWahl='system'; }
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t==='dark'?'dark':'light');
+  const m=document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content', t==='dark'?'#17131a':'#fbfaf7');
+}
+function themeAnwenden(){
+  if(THEME_PARAM){ setTheme(THEME_PARAM); return; }
+  setTheme(themeWahl==='dark'||(themeWahl==='system'&&dunkelAbfrage.matches)?'dark':'light');
+  const b=el('themebtn');
+  b.textContent=THEME_SYMBOL[themeWahl];
+  b.setAttribute('aria-label','Erscheinungsbild: '+THEME_NAME[themeWahl]); b.title='Erscheinungsbild: '+THEME_NAME[themeWahl];
+}
+if(!THEME_PARAM&&FREI){
+  el('themebtn').hidden=false;
+  el('themebtn').addEventListener('click',()=>{
+    themeWahl=THEME_FOLGE[(THEME_FOLGE.indexOf(themeWahl)+1)%THEME_FOLGE.length];
+    try{ localStorage.setItem('aroma_theme',themeWahl); }catch(e){}
+    themeAnwenden();
+  });
+}
+dunkelAbfrage.addEventListener('change',()=>{ if(!THEME_PARAM) themeAnwenden(); });
+themeAnwenden();
+/* Wortwahl nach Geraet (TX-15): am Handy tippen und mit zwei Fingern zoomen, am Desktop klicken. */
+(function texte(){
+  const touch=matchMedia('(pointer: coarse)').matches;
+  el('subtxt').textContent='3 Ebenen · '+(touch?'tippe':'klicke')+' auf einen Filter, um nach Getränk zu wechseln';
+  el('hint').textContent=touch
+    ? 'Tippe auf ein Aroma, um den Pfad zu sehen · mit zwei Fingern zoomen · ziehen verschiebt'
+    : 'Klick auf ein Aroma zeigt den Pfad · Mausrad zoomt · ziehen verschiebt';
 })();
+window.addEventListener('resize',labelsAnpassen);
 window.addEventListener('message',e=>{
   const d=e.data;
   if(d && d.type==='aromarad-theme' && (d.value==='dark'||d.value==='light')) setTheme(d.value);
@@ -680,6 +791,13 @@ render('beide'); applyVB();
 if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(()=>{
   render(document.querySelector('.controls button.active').dataset.f);
 }); }
+</script>
+<script>
+/* Service Worker (02.10.2026, Q-2): nur als eigenstaendige App unter /aroma-rad/ - die Kopien in
+   anderen Apps registrieren nichts. Loescht nur eigene Caches (sw.js). */
+if ("serviceWorker" in navigator && window.top === window && location.pathname.indexOf("/aroma-rad/") > -1) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+}
 </script>
 </body>
 </html>
